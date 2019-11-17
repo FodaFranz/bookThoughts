@@ -1,6 +1,5 @@
-//TODO: Notes
-
 import mongoose, { Schema } from "mongoose";
+import Notes, { INote } from "./noteModel";
 
 export interface IBook extends mongoose.Document {
     _id: String;
@@ -20,6 +19,7 @@ export interface IBook extends mongoose.Document {
     currentPage?: Number;
     state?: string;
     authors: Object[];
+    notes: [INote]
 };
 
 export const BookSchema = new Schema({
@@ -82,7 +82,8 @@ export const BookSchema = new Schema({
         type: Array,
         name: { type: String },
         name_lower: { type: String }
-    }
+    },
+    notes: [Notes.schema]
 });
 
 export default mongoose.model<IBook>("Book", BookSchema);

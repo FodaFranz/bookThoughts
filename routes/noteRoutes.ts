@@ -9,4 +9,8 @@ router.get("/", (req, res) => {
     noteController.getAll(req, res);
 })
 
+router.post("/add/:id", (req, res) => {
+    noteController.add(req, res);
+})
+
 export = router;

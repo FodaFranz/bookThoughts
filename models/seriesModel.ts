@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import NoteSchema, { INote } from "./noteModel";
 
 export interface ISeries extends mongoose.Document {
     _id: String;
@@ -9,6 +10,7 @@ export interface ISeries extends mongoose.Document {
     finishDate?: Date;
     rating?: Number;
     books: [String];
+    notes: [INote];
 }
 
 const SeriesSchema = new Schema({
@@ -41,7 +43,8 @@ const SeriesSchema = new Schema({
     },
     books: {
         type: Array
-    }
+    },
+    notes: [NoteSchema.schema]
 });
 
 export default mongoose.model<ISeries>("Series", SeriesSchema);

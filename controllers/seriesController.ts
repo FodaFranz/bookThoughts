@@ -126,7 +126,7 @@ class seriesController {
     }
 
     //#region utility
-    replaceSeries(id: String, newSeries: ISeries) {
+    private replaceSeries(id: String, newSeries: ISeries) {
         return new Promise<ISeries>((resolve, reject) => {
             Series.replaceOne({_id: id}, newSeries, (err: Error, result: any) => {
                 if(err) 
@@ -138,7 +138,7 @@ class seriesController {
         
     }
 
-    getSeriesById(id: String) {
+    private getSeriesById(id: String) {
         return new Promise<ISeries>((resolve, reject) => {
             Series.findById(id, (err: Error, series: ISeries) => {
                 if(err) 

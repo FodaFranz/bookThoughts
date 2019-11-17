@@ -168,7 +168,8 @@ class bookController {
                 description_lower: googleData.description.toLowerCase(),
                 publishedDate: googleData.publishedDate,
                 currentPage: currentPage,
-                state: state
+                state: state,
+                notes: []
             });
 
             book.save((err, result) => {
