@@ -16,7 +16,7 @@ class seriesController {
     }
 
     get(req: express.Request, res: express.Response) {
-        this.getSeriesById(req.params.id)
+        this.getById(req.params.id)
             .then(series => res.status(200).json(series))
             .catch(err => {
                 console.log(err);
@@ -126,7 +126,7 @@ class seriesController {
     }
 
     //#region utility
-    private replaceSeries(id: String, newSeries: ISeries) {
+    replaceSeries(id: String, newSeries: ISeries) {
         return new Promise<ISeries>((resolve, reject) => {
             Series.replaceOne({_id: id}, newSeries, (err: Error, result: any) => {
                 if(err) 
@@ -138,7 +138,7 @@ class seriesController {
         
     }
 
-    private getSeriesById(id: String) {
+    getById(id: String) {
         return new Promise<ISeries>((resolve, reject) => {
             Series.findById(id, (err: Error, series: ISeries) => {
                 if(err) 

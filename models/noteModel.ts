@@ -9,7 +9,7 @@ export interface INote extends mongoose.Document {
     header_lower: String;
 }
 
-const NoteSchema = new Schema({
+const noteSchema = new Schema({
     _id: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
@@ -33,4 +33,4 @@ const NoteSchema = new Schema({
     }
 })
 
-export default mongoose.model<INote>("Note", NoteSchema);
+export default mongoose.model<INote>("Note", noteSchema);

@@ -13,4 +13,12 @@ router.post("/add/:id", (req, res) => {
     noteController.add(req, res);
 })
 
+router.put("/edit/:id", (req, res) => {
+    noteController.edit(req, res);
+})
+
+router.delete("/delete/:id", (req, res) => {
+    noteController.delete(req, res);
+});
+
 export = router;

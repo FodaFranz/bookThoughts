@@ -7,10 +7,11 @@ TODO:
 
 import fetch from "node-fetch";
 import mongoose, { mongo } from "mongoose";
-import Book, { IBook, BookSchema } from "../models/bookModel";
+import Book, { IBook } from "../models/bookModel";
 import express from "express";
 import config from "../build/config.json";
 import Author from "../models/authorObject";
+import { rejects } from "assert";
 
 class bookController {
     apiKey: String;
@@ -35,18 +36,12 @@ class bookController {
     }
 
     get(req: express.Request, res: express.Response) {
-        Book.findById(req.params.id, (err: Error, result: IBook) => {
-            if(err) {
+        this.getById(req.params.id)
+            .then(book => res.status(200).json(book))
+            .catch(err => {
                 console.log(err);
                 res.status(500).send(err);
-            }
-            else {
-                if(result === null) 
-                    res.status(404).send(`${req.params.id} not found`);
-                else
-                    res.status(200).send(result);
-            }
-        })
+            })
     }
 
     /*
@@ -88,15 +83,28 @@ class bookController {
         Description: update a book
     */
     edit(req: express.Request, res: express.Response) {
-        Book.replaceOne({ _id: req.params.id }, req.body, (err: Error, raw: any) => {
-            if (err) {
-                console.log(err);
-                res.status(500).send(err);
-            }
-            else {
-                res.status(200).send(req.body);
-            }
-        })
+        const newBook: IBook = new Book({
+            _id: req.body._id,
+            _date: new Date(),
+            title: req.body.title,
+            title_lower: req.body.title.toLowerCase(),
+            subTitle: req.body.subTitle,
+            subTitle_lower: req.body.subTitle.toLowerCase(),
+            startDate: req.body.startDate,
+            finishDate: req.body.finishDate,
+            categories: req.body.categories,
+            rating: req.body.rating,
+            pageCount: req.body.pageCount,
+            description: req.body.description,
+            description_lower: req.body.description.toLowerCase(),
+            publishedDate: req.body.publishedDate,
+            currentPage: req.body.currentPage,
+            state: req.body.state,
+            authors: req.body.authors,
+            notes: req.body.notes
+        });
+
+        this.replaceBook(req.params.id, newBook);
     }
 
     /*
@@ -222,6 +230,30 @@ class bookController {
                 res.status(500).send("Something went wrong ...");
             })
     }
+
+    //#region utility
+    getById(id: String) {
+        return new Promise<IBook>((resolve, reject) => {
+            Book.findById(id, (err: Error, book: IBook) => {
+                if(err) 
+                    reject(err);
+                else 
+                    resolve(book);
+           })
+        })
+    }
+
+    replaceBook(id: String, newBook: IBook) {
+        return new Promise((resolve, reject) => {
+            Book.replaceOne({ _id: id }, newBook, (err: Error, result: any) => {
+                if(err)
+                    reject(err);
+                else   
+                    resolve(result);
+            })
+        })
+    }
+    //#endregion utility
 }
 
 export = bookController;

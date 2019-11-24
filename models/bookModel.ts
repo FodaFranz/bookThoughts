@@ -22,7 +22,7 @@ export interface IBook extends mongoose.Document {
     notes: [INote]
 };
 
-export const BookSchema = new Schema({
+export const bookSchema = new Schema({
     _id: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
@@ -86,4 +86,4 @@ export const BookSchema = new Schema({
     notes: [Notes.schema]
 });
 
-export default mongoose.model<IBook>("Book", BookSchema);
+export default mongoose.model<IBook>("Book", bookSchema);

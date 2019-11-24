@@ -11,9 +11,10 @@ export interface ISeries extends mongoose.Document {
     rating?: Number;
     books: [String];
     notes: [INote];
+    getById(): ISeries;
 }
 
-const SeriesSchema = new Schema({
+const seriesSchema = new Schema({
     _id: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
@@ -47,4 +48,4 @@ const SeriesSchema = new Schema({
     notes: [NoteSchema.schema]
 });
 
-export default mongoose.model<ISeries>("Series", SeriesSchema);
+export default mongoose.model<ISeries>("Series", seriesSchema);
