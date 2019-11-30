@@ -20,18 +20,14 @@ class bookController {
         this.apiKey = config.web.apikey;
     }
 
-    /*
-        Description: returns every book in the database
-    */
     getAll(req: express.Request, res: express.Response) {
-        Book.find({}, (err: Error, result: IBook[]) => {
-            if(err) {
+        Book.find({}, (err: Error, books: IBook[]) => {
+            if (err) {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             }
-            else {
-                res.status(200).json(result);
-            }
+            else
+                res.status(200).json(books);
         })
     }
 
@@ -40,168 +36,212 @@ class bookController {
             .then(book => res.status(200).json(book))
             .catch(err => {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             })
     }
 
-    /*
-        Body: searchTerm
-        Description: Searches for the criteria in the mongodb db
-    */
+    //#region add
+    add(req: express.Request, res: express.Response) {
+        this.createAuthorObject(req.body.authors)
+            .then(authors => this.addBook(req.body, authors))
+            .then(book => res.status(200).json(book))
+            .catch(err =>  {
+                console.log(err);
+                res.status(500).send(err.message);
+            })
+    }
+
+    createAuthorObject(authors: [String]): Promise<Author[]> {
+        let authorObjects: Author[] = [];
+
+        return new Promise<Author[]>((resolve, reject) => {
+            try {
+                authors.forEach((author, i) => {
+                    authorObjects.push(new Author(author));
+
+                    if(i == authors.length - 1) 
+                        resolve(authorObjects);
+                })
+            }
+            catch(err) {
+                reject(err);
+            }
+
+        })
+    }
+
+    addBook(data: any, authors: Author[]): Promise<IBook> {
+        return new Promise<IBook>((resolve, reject) => {
+            try {
+                const book: IBook = new Book({
+                    _id: mongoose.Types.ObjectId(),
+                    _lastModified: new Date(),
+                    _creationDate: new Date(),
+                    title: data.title,
+                    title_lower: data.title === undefined ? undefined : data.title.toLowerCase(),
+                    subTitle: data.subTitle || "",
+                    title_subTitle: data.subTitle === undefined ? undefined : data.subTitle.toLowerCase(),
+                    pageCount: data.pageCount,
+                    description: data.description,
+                    description_lower: data.description === undefined ? undefined : data.description.toLowerCase(),
+                    authors: authors,
+                    categories: data.categories,
+                    startDate: data.startDate,
+                    finishDate: data.finishDate,
+                    rating: data.rating,
+                    state: data.state
+                });
+
+                book.save((err: Error, book: IBook) => {
+                    if(err)
+                        reject(err);
+                    else
+                        resolve(book);
+                })
+            }
+            catch(err) {
+                reject(err);
+            }
+        });
+    }
+    
+    //#endregion add
+
     findLocally(req: express.Request, res: express.Response) {
-        const searchTerm: String = req.body.searchTerm.toLowerCase();
+        const searchTerm: String = req.params.searchPhrase.toLowerCase();
 
         Book.find({
             $or: [
                 { 'title_lower': { $regex: '.*' + searchTerm + '.*' } },
-                { 'subTitle_lower': { $regex: '.*' + searchTerm + '.*' }},
-                { 'description_lower': { $regex: '.*' + searchTerm + '.*' }},
-                { 
-                    'authors': { 
-                        $elemMatch: { 
-                            name_lower: { 
-                                $regex: '.*' + searchTerm + '.*' 
-                            } 
-                        } 
+                { 'subTitle_lower': { $regex: '.*' + searchTerm + '.*' } },
+                { 'description_lower': { $regex: '.*' + searchTerm + '.*' } },
+                {
+                    'authors': {
+                        $elemMatch: {
+                            name_lower: {
+                                $regex: '.*' + searchTerm + '.*'
+                            }
+                        }
                     }
                 }
             ]
-        }, (err: Error, result: IBook[]) => {
-            if(err) {
+        }, (err: Error, books: IBook[]) => {
+            if (err) {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             }
-            else {
-                res.status(200).json(result);
-            }
+            else
+                res.status(200).json(books);
         });
     }
 
-    /*
-        Body: book with updated values
-        Url: .../edit/<id>
-        Description: update a book
-    */
+    //#region edit
     edit(req: express.Request, res: express.Response) {
-        const newBook: IBook = new Book({
-            _id: req.body._id,
-            _date: new Date(),
-            title: req.body.title,
-            title_lower: req.body.title.toLowerCase(),
-            subTitle: req.body.subTitle,
-            subTitle_lower: req.body.subTitle.toLowerCase(),
-            startDate: req.body.startDate,
-            finishDate: req.body.finishDate,
-            categories: req.body.categories,
-            rating: req.body.rating,
-            pageCount: req.body.pageCount,
-            description: req.body.description,
-            description_lower: req.body.description.toLowerCase(),
-            publishedDate: req.body.publishedDate,
-            currentPage: req.body.currentPage,
-            state: req.body.state,
-            authors: req.body.authors,
-            notes: req.body.notes
-        });
-
-        this.replaceBook(req.params.id, newBook);
+        this.createAuthorObject(req.body.authors)
+            .then(authors => {
+                const newBook: IBook = new Book({
+                    _id: req.params.id,
+                    _lastModified: new Date(),
+                    title: req.body.title,
+                    title_lower: req.body.title === undefined ? undefined : req.body.title.toLowerCase(),
+                    subTitle: req.body.subTitle,
+                    subTitle_lower: req.body.subTitle === undefined ? undefined : req.body.subTitle.toLowerCase(),
+                    startDate: req.body.startDate,
+                    finishDate: req.body.finishDate,
+                    categories: req.body.categories,
+                    rating: req.body.rating,
+                    pageCount: req.body.pageCount,
+                    description: req.body.description,
+                    description_lower: req.body.description === undefined ? undefined : req.body.description.toLowerCase(),
+                    state: req.body.state,
+                    authors: authors,
+                    notes: req.body.notes
+                });
+        
+                this.createNewBook(req.params.id, newBook)
+                    .then(book => this.replaceBook(req.params.id, book))
+                    .then(newBook => res.status(200).send(newBook))
+                    .catch(err => {
+                         console.log(err);
+                         res.status(500).send(err.message);
+                    })
+            })
+            .catch(err => {
+                console.log(err);
+                res.status(500).send(err.message);
+            })
+        
     }
 
-    /*
-        Body: empty
-        Url: .../delete/<id>
-        Description: deletes book from db (including all notes)
-    */
+    createNewBook(id: String, newBook: IBook): Promise<IBook> {
+        return new Promise<IBook>((resolve, reject) => {
+            Book.findById(id, (err: Error, oldBook: IBook) => {
+                if(err)
+                    reject(err);
+                else {
+                    if(oldBook === null) {
+                        reject(new Error(`Book ${id} not found`));
+                    }
+                    else {
+                        newBook._creationDate = oldBook._creationDate;
+                        if(newBook.title === undefined) {
+                            newBook.title = oldBook.title;
+                            newBook.title_lower = oldBook.title_lower;
+                        }
+
+                        if(newBook.subTitle === undefined) {
+                            newBook.subTitle = oldBook.subTitle;
+                            newBook.subTitle_lower = oldBook.subTitle_lower;
+                        }
+
+                        if(newBook.startDate === undefined) newBook.startDate = oldBook.startDate;
+                        if(newBook.finishDate === undefined) newBook.finishDate = oldBook.finishDate;
+                        if(newBook.categories.length as Number === 0) newBook.categories = oldBook.categories;
+                        if(newBook.rating === undefined) newBook.rating = oldBook.rating;
+                        if(newBook.pageCount === undefined) newBook.pageCount = oldBook.pageCount;
+
+                        if(newBook.description === undefined) {
+                            newBook.description = oldBook.description;
+                            newBook.description_lower = oldBook.description_lower;
+                        } 
+
+                        if(newBook.state === undefined) newBook.state = oldBook.state;
+                        if(newBook.authors.length as Number === 0) newBook.authors = oldBook.authors;
+                        if(newBook.notes === undefined) newBook.notes = oldBook.notes;
+
+                        resolve(newBook);
+                    }
+                }
+            });
+        })
+    }
+    //#endregion edit
+
     delete(req: express.Request, res: express.Response) {
         const id: String = req.params.id;
         Book.findByIdAndDelete(id, (err: Error, response: IBook | null) => {
             if (err) {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             }
             else {
                 if (response === null) {
                     res.status(404).send(`${id} does not exist`);
                 }
                 else {
-                    res.status(200).json(response);                    
+                    res.status(200).json(response);
                 }
             }
         });
     }
 
-    /*
-        Body: big boi JSON-Object from Google API, [rating], [startDate], [finishDate], [state]
-        Description: Adds book to the db
-    */
-    add(req: express.Request, res: express.Response) {
-            this.addBookToDb(req.body.volumeInfo, req.body.currentPage, req.body.volumeInfo.authors, req.body.rating, req.body.startDate, req.body.finishDate, req.body.state)
-            .then(result => res.status(200).json(result))
-            .catch(err => {
-                console.log(err);
-                res.status(500).send(err);
-            })
-    }
-
-    createAuthorArray(authorNames: [String]) {
-        let authors: Author[] = [];
-
-        authorNames.forEach(authorName => {
-            authors.push(new Author(authorName));
-        })
-
-        return authors;
-    }
-
-    addBookToDb(googleData: any, currentPage: Number, authors: any, rating: Number, startDate: Date, finishDate: Date, state: String) {
-        return new Promise<IBook>((resolve, reject) => {
-            const id: mongoose.Types.ObjectId = mongoose.Types.ObjectId();
-
-            let authorObjects: Author[] = this.createAuthorArray(authors);
-
-            const book: IBook = new Book({
-                _id: id,
-                authors: authorObjects,
-                _date: new Date(),
-                title: googleData.title,
-                title_lower: googleData.title.toLowerCase(),
-                subTitle: googleData.subtitle || "",
-                subTitle_lower: googleData.subtitle == undefined ? "" : googleData.subtitle.toLowerCase(),
-                startDate: startDate === undefined ? new Date() : undefined,
-                finishDate: finishDate,
-                categories: googleData.categories,
-                rating: rating,
-                pageCount: googleData.pageCount,
-                description: googleData.description,
-                description_lower: googleData.description.toLowerCase(),
-                publishedDate: googleData.publishedDate,
-                currentPage: currentPage,
-                state: state,
-                notes: []
-            });
-
-            book.save((err, result) => {
-                if (err) reject(err);
-
-                if (result != null)
-                    resolve(result);
-                else
-                    reject("Something went wrong while adding the book the the db ...");
-            });
-        });
-
-    }
-
-    /*
-        Description: gets authors of book id
-    */
     getAuthors(req: express.Request, res: express.Response) {
-        let id: String = req.params.id;
+        const id: String = req.params.id;
 
         Book.find({ _id: id }, "authors", (err: Error, authors: any) => {
-            if(err) {
+            if (err) {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             }
             else {
                 if (authors === [])
@@ -212,22 +252,17 @@ class bookController {
         })
     }
 
-    /*
-        Description: Queries the Google-Books-API for the Author an Title, sends back the first 5 results
-                 the user can then select one of the results to add to his reading-list.
-    */
     findGlobally(req: express.Request, res: express.Response) {
-        const title: String = req.body.title || "";
-        const authorName: String = req.body.author || "";
+        const searchPhrase: String = (req.params.searchPhrase as String).replace(" ", "+");
 
-        fetch(`https://www.googleapis.com/books/v1/volumes?q=${title}+${authorName}&key=${this.apiKey}&language=en`)
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${searchPhrase}&key=${this.apiKey}&langrestrict=en`)
             .then(res => res.json())
             .then(json => {
                 res.status(200).json(json.items.slice(0, 30));
             })
             .catch(err => {
                 console.log(err);
-                res.status(500).send("Something went wrong ...");
+                res.status(500).send(err.message);
             })
     }
 
@@ -235,21 +270,25 @@ class bookController {
     getById(id: String) {
         return new Promise<IBook>((resolve, reject) => {
             Book.findById(id, (err: Error, book: IBook) => {
-                if(err) 
+                if (err)
                     reject(err);
-                else 
-                    resolve(book);
-           })
+                else {
+                    if (book == null)
+                        reject(new Error(`Book ${id} not found`));
+                    else
+                        resolve(book);
+                }
+            })
         })
     }
 
     replaceBook(id: String, newBook: IBook) {
         return new Promise((resolve, reject) => {
             Book.replaceOne({ _id: id }, newBook, (err: Error, result: any) => {
-                if(err)
+                if (err)
                     reject(err);
-                else   
-                    resolve(result);
+                else
+                    resolve(newBook);
             })
         })
     }

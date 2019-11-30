@@ -1,7 +1,3 @@
-/*
-todo:
-    -Swagger
-*/
 
 import express from "express";
 import config from "./build/config.json";

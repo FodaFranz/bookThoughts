@@ -3,6 +3,7 @@ import mongoose, { Schema } from "mongoose";
 export interface INote extends mongoose.Document {
     _id: String;
     _lastModified: Date;
+    _creationDate: Date;
     content: String;
     content_lower: String;
     header: String;
@@ -16,6 +17,10 @@ const noteSchema = new Schema({
     },
     _lastModified: {
         type: Date
+    },
+    _creationDate: {
+        type: Date,
+        required: true
     },
     content: {
         type: String

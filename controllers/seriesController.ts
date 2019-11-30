@@ -7,7 +7,7 @@ class seriesController {
         Series.find({}, (err: Error,  series: ISeries[]) => {
             if(err) {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             }
             else {
                 res.status(200).json(series);
@@ -20,26 +20,27 @@ class seriesController {
             .then(series => res.status(200).json(series))
             .catch(err => {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             })
     }
 
     add(req: express.Request, res: express.Response) {
         let series: ISeries = new Series({
             _id: mongoose.Types.ObjectId(),
+            _creationDate: new Date(),
+            _lastModified: new Date(),
             title: req.body.title,
-            title_lower: req.body.title.toLowerCase(),
-            startDate: req.body.startDate || new Date(),
+            title_lower: req.body.title === undefined ? undefined : req.body.title.toLowerCase(),
+            startDate: req.body.startDate,
             finishDate: req.body.finishDate,
             rating: req.body.rating || -1,
-            _date: new Date(),
             books: []
         });
         
         series.save((err: Error, result: ISeries) => {
             if(err) {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             }
             else {
                 res.status(200).json(series);
@@ -53,7 +54,7 @@ class seriesController {
         Series.findOneAndDelete({_id: id}, (err: Error, result: ISeries | null) => {
             if(err) {
                 console.log(err);
-                res.status(500).send(err);
+                res.status(500).send(err.message);
             }
             else {
                 if (result === null) {
@@ -67,12 +68,37 @@ class seriesController {
     }
 
     edit(req: express.Request, res: express.Response) {
-        this.replaceSeries(req.params.id, req.body)
-        .then(series => res.status(200).json(series))
-        .catch(err => {
-            console.log(err);
-            res.status(500).send(err);
-        })
+        let newSeries: ISeries = new Series({
+            _id: req.params.id,
+            title: req.body.title,
+            title_lower: req.body.title === undefined ? undefined : req.body.title.toLowerCase(),
+            startDate: req.body.startDate,
+            finishDate: req.body.finishDate,
+            rating: req.body.rating
+        });
+
+        this.getById(req.params.id)
+            .then(series => {
+                if(newSeries.title === undefined) {
+                    newSeries.title = series.title
+                    newSeries.title_lower = series.title_lower;
+                }
+
+                if(newSeries.startDate === undefined) newSeries.startDate = series.startDate;
+                if(newSeries.finishDate === undefined) newSeries.finishDate = series.finishDate;
+                if(newSeries.rating === undefined) newSeries.rating = series.rating;
+
+                this.replaceSeries(req.params.id, newSeries) 
+                    .then(newSeries => res.status(200).send(newSeries))
+                    .catch(err => {
+                        console.log(err);
+                        res.status(500).send(err.message);
+                    })
+            })
+            .catch(err => {
+                console.log(err);
+                res.status(500).send(err.message);
+            })
     }
 
     addBook(req: express.Request, res: express.Response) {
@@ -132,7 +158,7 @@ class seriesController {
                 if(err) 
                     reject(err);
                 else 
-                    resolve(result);
+                    resolve(newSeries);
             })
         });
         
@@ -144,7 +170,10 @@ class seriesController {
                 if(err) 
                     reject(err);
                 else 
-                    resolve(series);
+                    if(series === null)
+                        reject(new Error(`Series ${id} not found`));
+                    else
+                        resolve(series);
             });
         });
     }

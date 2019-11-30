@@ -3,22 +3,23 @@ import Notes, { INote } from "./noteModel";
 
 export interface IBook extends mongoose.Document {
     _id: String;
-    _date: Date;
+    _lastModified: Date;
+    _creationDate: Date;
     title: string;
     title_lower: String;
     subTitle?: String;
     subTitle_lower?: String;
-    startDate?: Date;
-    finishDate?: Date;
-    categories?: [String];
-    rating?: number;
     pageCount?: number;
     description?: String;
     description_lower?: String;
-    publishedDate?: Date;
-    currentPage?: Number;
-    state?: string;
     authors: Object[];
+    categories: [String];
+
+    //Data not inside the json-Object from the google-api
+    startDate?: Date;
+    finishDate?: Date;
+    rating?: number;
+    state?: string;
     notes: [INote]
 };
 
@@ -27,7 +28,11 @@ export const bookSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true
     },
-    _date: {
+    _lastModified: {
+        type: Date,
+        required: true
+    },
+    _creationDate: {
         type: Date,
         required: true
     },
@@ -70,9 +75,6 @@ export const bookSchema = new Schema({
     },
     publishedDate: {
         type: Date
-    },
-    currentPage: {
-        type: Number
     },
     state: {
         enum: ["to-read", "read", "reading"],

@@ -3,7 +3,8 @@ import NoteSchema, { INote } from "./noteModel";
 
 export interface ISeries extends mongoose.Document {
     _id: String;
-    _date: Date;
+    _creationDate: Date;
+    _lastModified: Date;
     title: String;
     title_lower: String;
     startDate?: Date;
@@ -11,7 +12,6 @@ export interface ISeries extends mongoose.Document {
     rating?: Number;
     books: [String];
     notes: [INote];
-    getById(): ISeries;
 }
 
 const seriesSchema = new Schema({
@@ -19,7 +19,11 @@ const seriesSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true
     },
-    _date: {
+    _creationDate: {
+        type: Date,
+        required: true
+    },
+    _lastModified: {
         type: Date,
         required: true
     },
