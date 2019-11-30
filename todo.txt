@@ -1,3 +1,0 @@
-Notes:
-    - getById
-    - subPath with SeriesId
